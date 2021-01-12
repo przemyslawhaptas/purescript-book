@@ -20,6 +20,9 @@ data Shape
   | Rectangle Point Number Number
   | Line Point Point
   | Text Point String
+  | Clipped Picture
+
+type Picture = Array Shape
 
 showShape :: Shape -> String
 showShape (Circle c r) =
@@ -30,8 +33,8 @@ showShape (Line start end) =
   "Line [start: " <> showPoint start <> ", end: " <> showPoint end <> "]"
 showShape (Text loc text) =
   "Text [location: " <> showPoint loc <> ", text: " <> show text <> "]"
-
-type Picture = Array Shape
+showShape (Clipped picture) =
+  foldl (<>) "" (map showShape picture)
 
 showPicture :: Picture -> Array String
 showPicture = map showShape
@@ -76,6 +79,8 @@ shapeBounds (Text (Point { x, y }) _) = Bounds
   , bottom: y
   , right:  x
   }
+shapeBounds (Clipped picture) = bounds picture
+
 
 union :: Bounds -> Bounds -> Bounds
 union (Bounds b1) (Bounds b2) = Bounds
