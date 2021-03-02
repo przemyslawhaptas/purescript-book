@@ -6,7 +6,7 @@ import Effect (Effect)
 import Effect.Console (logShow)
 import Data.Maybe (Maybe(..))
 import Control.Apply (lift2)
-import Data.Traversable (class Traversable, traverse, sequenceDefault)
+import Data.Traversable (class Traversable, traverse, sequence, sequenceDefault)
 import Data.Foldable (class Foldable, foldMap, foldrDefault, foldlDefault)
 
 import Data.AddressBook (examplePerson)
@@ -39,7 +39,6 @@ combineMaybe :: forall a f. Applicative f => Maybe (f a) -> f (Maybe a)
 combineMaybe Nothing = pure Nothing
 combineMaybe (Just a) = Just <$> a
 
-
 data Tree a = Leaf | Branch (Tree a) a (Tree a)
 
 instance functorTree :: Functor Tree where
@@ -56,3 +55,9 @@ instance traversableTree :: Traversable Tree where
   traverse _ Leaf = pure Leaf
   traverse f (Branch left val right) = Branch <$> (traverse f left) <*> (f val) <*> (traverse f right) -- in-order
   sequence = sequenceDefault
+
+mySequence :: forall t a m. Traversable t => Applicative m => t (m a) -> m (t a)
+mySequence = traverse identity
+
+myTraverse :: forall t a b m. Traversable t => Applicative m => (a -> m b) -> t a -> m (t b)
+myTraverse f t = sequence (map f t)
