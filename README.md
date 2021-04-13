@@ -23,3 +23,10 @@ Some of the dependencies listed originally in chapters' bower.json files are sta
 + main :: Effect Unit
 ```
 8. If it turns out the compiler needs to be upgraded to the latest version run `yarn global upgrade --latest purescript`
+
+## Run the project
+
+1. Running unit tests on watch: `pulp -w test -m "Test.Main"`
+2. Running the build on watch: `pulp -w build`
+3. Running the REPL: `pulp repl`
+4. Building the dist: `pulp browserify --to dist/Main.js`
