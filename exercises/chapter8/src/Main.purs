@@ -70,13 +70,7 @@ addressBook = component "AddressBook" componentBody
     render ctx = do
       { person: Person person@{ homeAddress: Address address }, errors } <- getState ctx
 
-      let renderValidationError err = D.li' [ D.text err ]
-
-          renderValidationErrors [] = []
-          renderValidationErrors xs =
-            [ D.div [ P.className "alert alert-danger" ]
-                    [ D.ul' (map renderValidationError xs) ]
-            ]
+      let renderValidationError err = D.li [ P.className "alert alert-danger" ] [ D.text err ]
 
           formField name hint value update =
             D.div [ P.className "form-group" ]
@@ -108,7 +102,7 @@ addressBook = component "AddressBook" componentBody
       pure $
         D.div [ P.className "container" ]
               [ D.div [ P.className "row" ]
-                      (renderValidationErrors errors)
+                      (map renderValidationError errors)
               , D.div [ P.className "row" ]
                       [ D.form [ P.className "form-horizontal" ] $
                                [ D.h3' [ D.text "Basic Information" ]
