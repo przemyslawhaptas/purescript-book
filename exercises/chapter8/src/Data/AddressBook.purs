@@ -17,6 +17,8 @@ data PhoneType
   | CellPhone
   | OtherPhone
 
+derive instance eqPhoneType :: Eq PhoneType
+
 newtype PhoneNumber = PhoneNumber
   { "type" :: PhoneType
   , number :: String
