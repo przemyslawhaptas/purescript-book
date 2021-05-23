@@ -26,7 +26,8 @@
     "purescript-canvas": "^5.0.0",
     "purescript-web-events": "^3.0.0",
     "purescript-web-dom": "^5.0.0",
-    "purescript-web-html": "^3.0.1"
+    "purescript-web-html": "^3.0.1",
+    "purescript-web-uievents": "^3.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^5.0.0"
