@@ -2,10 +2,9 @@ module Control.Monad.Eff.DOM where
 
 import Prelude
 
-import Control.Monad.Eff (Eff)
+import Effect (Effect)
 import Data.Function.Uncurried (Fn3, runFn3)
 import Data.Maybe (Maybe(..))
-import DOM (DOM)
 
 foreign import data Node :: Type
 
@@ -14,17 +13,17 @@ foreign import querySelectorImpl
    . Fn3 r
          (Node -> r)
          String
-         (Eff (dom :: DOM | eff) r)
+         (Effect r)
 
 querySelector
   :: forall eff
    . String
-  -> Eff (dom :: DOM | eff) (Maybe Node)
+  -> Effect (Maybe Node)
 querySelector s = runFn3 querySelectorImpl Nothing Just s
 
 foreign import addEventListener
   :: forall eff
    . String
-  -> Eff (dom :: DOM | eff) Unit
+  -> Effect Unit
   -> Node
-  -> Eff (dom :: DOM | eff) Unit
+  -> Effect Unit
