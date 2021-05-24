@@ -5,6 +5,8 @@ import Prelude
 import Effect (Effect)
 import Foreign (Foreign)
 
-foreign import setItem :: forall eff. String -> String -> Effect Unit
+foreign import setItem :: String -> String -> Effect Unit
 
-foreign import getItem :: forall eff. String -> Effect Foreign
+foreign import getItem :: String -> Effect Foreign
+
+foreign import removeItem :: String -> Effect Unit

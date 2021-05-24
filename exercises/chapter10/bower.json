@@ -26,7 +26,8 @@
     "purescript-web-uievents": "^3.0.0",
     "purescript-web-html": "^3.1.0",
     "purescript-react": "^9.0.0",
-    "purescript-react-dom": "^7.0.0"
+    "purescript-react-dom": "^7.0.0",
+    "purescript-arrays": "^6.0.1"
   },
   "devDependencies": {
     "purescript-psci-support": "^5.0.0"
