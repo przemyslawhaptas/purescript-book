@@ -34,3 +34,7 @@ Some of the dependencies listed originally in chapters' bower.json files are sta
   * `npm install`
   * `pulp [-w --before clear] browserify [--to dist/Main.js]`
 5. Building a PS module for use in the browser: `pulp build --src-path bower_components/purescript-arrays/src --main Data.Array --skip-entry-point --to ./Array.js`
+
+## Exercises Todo
+
+- [ ] 10.18.1-4
