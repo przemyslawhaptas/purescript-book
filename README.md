@@ -26,7 +26,15 @@ Some of the dependencies listed originally in chapters' bower.json files are sta
 
 ## Run the project
 
-1. Running unit tests on watch: `pulp -w test -m "Test.Main"`
-2. Running the build on watch: `pulp -w build`
-3. Running the REPL: `pulp repl`
-4. Building the dist: `pulp -w browserify --to dist/Main.js` or `pulp -w build -O --main Example.Shapes --to dist/Main.js`
+1. Running the REPL: `pulp repl`
+2. Running unit tests on watch: `pulp [-w --before clear] test [--main "Test.Main"]`
+3. Running the build on watch: `pulp [-w --before clear] build [--main Example.Shapes --to dist/Main.js]`
+3. Running the build for browser on watch: `pulp [-w --before clear] build [-O --main Example.Shapes --to dist/Main.js]`
+4. Building a web project:
+  * `npm install`
+  * `pulp [-w --before clear] browserify [--to dist/Main.js]`
+5. Building a PS module for use in the browser: `pulp build --src-path bower_components/purescript-arrays/src --main Data.Array --skip-entry-point --to ./Array.js`
+
+## Exercises Todo
+
+- [ ] 10.18.1-4
