@@ -2,14 +2,18 @@ module Test.Exercises where
 
 import Prelude
 
-import Control.Monad.Except (ExceptT, runExcept, throwError)
-import Control.Monad.Reader (Reader, ask, local, runReader)
-import Control.Monad.State (State, execState, StateT, runStateT, get, put)
-import Control.Monad.State.Class (modify)
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Writer (Writer, execWriter, tell, runWriterT, WriterT)
+import Control.Alternative ((<|>))
+import Control.Monad.Except (ExceptT, runExcept, runExceptT)
+import Control.Monad.Error.Class (throwError)
+import Control.Monad.Reader (Reader, runReader)
+import Control.Monad.Reader.Class (ask, local)
+import Control.Monad.State (State, execState, StateT, runStateT)
+import Control.Monad.State.Class (modify, get, put)
+import Control.Monad.Writer (Writer, execWriter, runWriter, runWriterT, WriterT)
+import Control.Monad.Writer.Class (tell)
 import Data.Foldable (traverse_, fold)
 import Data.Identity (Identity)
+import Data.List (List, many)
 import Data.List.Lazy (replicate)
 import Data.Maybe (Maybe(..))
 import Data.Either (Either)
@@ -47,6 +51,10 @@ main = log $ render $ cat
   , indent $ line $ "out " <> show (runParser (string "abc") "abcdef")
   , indent $ line "in: prefix: def, string: abcdef"
   , indent $ line $ "out " <> show (runParser (string "def") "abcdef")
+  , line "#asThenBs"
+  , indent $ line $ "out " <> show (runParser asThenBs "aaaaabaaacabcdef")
+  , line "#asOrBs"
+  , indent $ line $ "out " <> show (runParser asOrBs "aaaaabaaacabcdef")
   ]
 
 testParens :: String -> Boolean
@@ -113,9 +121,9 @@ runParser p s = runExcept $ runWriterT $ runStateT p s
 split :: Parser String
 split = do
   s <- get
-  lift $ tell ["The state is " <> show s]
+  tell ["The state is " <> show s]
   case s of
-    "" -> lift $ lift $ throwError ["Empty string"]
+    "" -> throwError ["Empty string"]
     _ -> do
       put (drop 1 s)
       pure (take 1 s)
@@ -123,9 +131,18 @@ split = do
 string :: String -> Parser String
 string prefix = do
   s <- get
-  lift $ tell ["The state is " <> show s]
+  tell ["The state is " <> show s]
   case (stripPrefix (Pattern prefix) s) of
-    Nothing -> lift $ lift $ throwError [prefix <> " is not a prefix of " <> s <> "!"]
+    Nothing -> throwError [prefix <> " is not a prefix of " <> s <> "!"]
     Just suffix -> do
       put suffix
       pure prefix
+
+asThenBs :: Parser (List String)
+asThenBs = do
+  as <- many (string "a")
+  bs <- many (string "b")
+  pure $ as <> bs
+
+asOrBs :: Parser (List String)
+asOrBs = many (string "a" <|> string "b")
