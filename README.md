@@ -38,3 +38,4 @@ Some of the dependencies listed originally in chapters' bower.json files are sta
 ## Exercises Todo
 
 - [ ] 10.18.1-4
+- [ ] 11.9.3
