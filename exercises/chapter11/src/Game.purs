@@ -91,6 +91,12 @@ game ["use", item] =
       if hasItem
         then use gameItem
         else tell (L.singleton "You don't have that item.")
+game ["cheat"] = do
+  GameState state <- get
+  put $ GameState state { items     = M.empty
+                        , inventory = S.union state.inventory (L.fold $ M.values state.items)
+                        }
+  game ["inventory"]
 game ["debug"] = do
   GameEnvironment env <- ask
   if env.debugMode
