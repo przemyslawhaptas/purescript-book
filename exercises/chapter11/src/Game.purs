@@ -4,9 +4,11 @@ import Prelude
 import Data.List as L
 import Data.Map as M
 import Data.Set as S
-import Control.Monad.RWS (RWS)
+import Control.Monad.Error.Class (throwError)
+import Control.Monad.Except (Except)
+import Control.Monad.RWS.Trans (RWST)
 import Control.Monad.Reader.Class (ask)
-import Control.Monad.State.Class (get, modify, put)
+import Control.Monad.State.Class (get, modify_, put)
 import Control.Monad.Writer.Class (tell)
 import Data.Coords (Coords(..), prettyPrintCoords, coords)
 import Data.Foldable (for_)
@@ -16,8 +18,9 @@ import Data.GameState (GameState(..))
 import Data.Maybe (Maybe(..))
 
 type Log = L.List String
+type Errors = L.List String
 
-type Game = RWS GameEnvironment Log GameState
+type Game = RWST GameEnvironment Log GameState (Except Errors)
 
 describeRoom :: Game Unit
 describeRoom = do
@@ -42,7 +45,7 @@ pickUp item = do
     _ -> tell (L.singleton "I don't see that item here.")
 
 move :: Int -> Int -> Game Unit
-move dx dy = modify (\(GameState state) -> GameState (state { player = updateCoords state.player }))
+move dx dy = modify_ (\(GameState state) -> GameState (state { player = updateCoords state.player }))
   where
   updateCoords :: Coords -> Coords
   updateCoords (Coords p) = coords (p.x + dx) (p.y + dy)
@@ -91,12 +94,22 @@ game ["use", item] =
       if hasItem
         then use gameItem
         else tell (L.singleton "You don't have that item.")
+game ["cheat"] = do
+  GameEnvironment env <- ask
+  if env.cheatMode
+    then do
+      GameState state <- get
+      put $ GameState state { items     = M.empty
+                            , inventory = S.union state.inventory (L.fold $ M.values state.items)
+                            }
+    else throwError (L.singleton "Not running in cheat mode.")
+  game ["inventory"]
 game ["debug"] = do
   GameEnvironment env <- ask
   if env.debugMode
     then do
       state :: GameState <- get
       tell (L.singleton (show state))
-    else tell (L.singleton "Not running in debug mode.")
+    else throwError (L.singleton "Not running in debug mode.")
 game [] = pure unit
-game _  = tell (L.singleton "I don't understand.")
+game _  = throwError (L.singleton "I don't understand.")

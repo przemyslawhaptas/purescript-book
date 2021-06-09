@@ -2,10 +2,11 @@ module Main where
 
 import Prelude
 import Node.ReadLine as RL
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Eff.Exception (EXCEPTION)
-import Control.Monad.RWS (RWSResult(..), runRWS)
+import Effect (Effect)
+import Effect.Console (log)
+import Control.Monad.Except (runExcept)
+import Control.Monad.RWS (RWSResult(..))
+import Control.Monad.RWS.Trans (runRWST)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.GameEnvironment (GameEnvironment, gameEnvironment)
@@ -17,44 +18,30 @@ import Game (game)
 import Node.Yargs.Applicative (Y, runY, flag, yarg)
 import Node.Yargs.Setup (usage)
 
-runGame
-  :: forall eff
-   . GameEnvironment
-  -> Eff ( exception :: EXCEPTION
-         , readline :: RL.READLINE
-         , console :: CONSOLE
-         | eff
-         ) Unit
+runGame :: GameEnvironment -> Effect Unit
 runGame env = do
   interface <- RL.createConsoleInterface RL.noCompletion
-  RL.setPrompt "> " 2 interface
+  RL.setPrompt "> " interface
 
   let
-    lineHandler
-      :: GameState
-      -> String
-      -> Eff ( exception :: EXCEPTION
-             , console :: CONSOLE
-             , readline :: RL.READLINE
-             | eff
-             ) Unit
+    lineHandler :: GameState -> String -> Effect Unit
     lineHandler currentState input = do
-      case runRWS (game (split (wrap " ") input)) env currentState of
-        RWSResult state _ written -> do
+      case runExcept $ runRWST (game (split (wrap " ") input)) env currentState of
+        Left errors -> do
+          for_ errors log
+
+        Right (RWSResult state _ written) -> do
           for_ written log
-          RL.setLineHandler interface $ lineHandler state
+          RL.setLineHandler (lineHandler state) interface
       RL.prompt interface
       pure unit
 
-  RL.setLineHandler interface $ lineHandler initialGameState
+  RL.setLineHandler (lineHandler initialGameState) interface
   RL.prompt interface
 
   pure unit
 
-main :: Eff ( exception :: EXCEPTION
-            , console :: CONSOLE
-            , readline :: RL.READLINE
-            ) Unit
+main :: Effect Unit
 main = runY (usage "$0 -p <player name>") $ map runGame env
   where
   env :: Y GameEnvironment
@@ -64,3 +51,5 @@ main = runY (usage "$0 -p <player name>") $ map runGame env
                                      false
                         <*> flag "d" ["debug"]
                                      (Just "Use debug mode")
+                        <*> flag "c" ["cheat"]
+                                     (Just "Use cheat mode")
