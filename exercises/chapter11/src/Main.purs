@@ -51,3 +51,5 @@ main = runY (usage "$0 -p <player name>") $ map runGame env
                                      false
                         <*> flag "d" ["debug"]
                                      (Just "Use debug mode")
+                        <*> flag "c" ["cheat"]
+                                     (Just "Use cheat mode")
