@@ -4,7 +4,9 @@ import Prelude
 import Node.ReadLine as RL
 import Effect (Effect)
 import Effect.Console (log)
-import Control.Monad.RWS (RWSResult(..), runRWS)
+import Control.Monad.Except (runExcept)
+import Control.Monad.RWS (RWSResult(..))
+import Control.Monad.RWS.Trans (runRWST)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.GameEnvironment (GameEnvironment, gameEnvironment)
@@ -24,8 +26,11 @@ runGame env = do
   let
     lineHandler :: GameState -> String -> Effect Unit
     lineHandler currentState input = do
-      case runRWS (game (split (wrap " ") input)) env currentState of
-        RWSResult state _ written -> do
+      case runExcept $ runRWST (game (split (wrap " ") input)) env currentState of
+        Left errors -> do
+          for_ errors log
+
+        Right (RWSResult state _ written) -> do
           for_ written log
           RL.setLineHandler (lineHandler state) interface
       RL.prompt interface
