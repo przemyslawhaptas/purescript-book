@@ -2,11 +2,12 @@ module Files where
 
 import Prelude
 
-import Control.Monad.Cont.Trans (ContT(..))
-import Effect (Effect)
-import Control.Monad.Except.Trans (ExceptT(..))
+import Control.Monad.Cont.Trans (ContT(..), runContT)
+import Control.Monad.Except.Trans (ExceptT(..), runExceptT)
 import Data.Either (Either(..))
 import Data.Function.Uncurried (Fn4, Fn3, runFn4, runFn3)
+import Data.Traversable (traverse)
+import Effect (Effect)
 import Types (Async)
 
 foreign import data FS :: Effect
@@ -63,3 +64,16 @@ copyFileContEx :: FilePath -> FilePath -> ExceptT ErrorCode Async Unit
 copyFileContEx src dest = do
   content <- readFileContEx src
   writeFileContEx dest content
+
+concatFilesContEx :: FilePath -> FilePath -> FilePath -> ExceptT ErrorCode Async Unit
+concatFilesContEx srcA srcB dest = do
+  contentA <- readFileContEx srcA
+  contentB <- readFileContEx srcB
+  writeFileContEx dest (contentA <> contentB)
+
+concatenateMany :: Array FilePath -> FilePath -> ExceptT ErrorCode Async (Array Unit)
+concatenateMany srcs dest = traverse (\src -> concatFilesContEx dest src dest) srcs
+
+test :: Effect Unit
+test = do
+  runContT (runExceptT (concatenateMany ["1.txt", "2.txt", "3.txt"] "dest.txt")) mempty
