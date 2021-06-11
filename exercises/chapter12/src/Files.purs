@@ -38,6 +38,21 @@ readFileCont path = ContT $ readFile path
 writeFileCont :: FilePath -> String -> Async (Either ErrorCode Unit)
 writeFileCont path text = ContT $ writeFile path text
 
+copyFileCont :: FilePath -> FilePath -> Async (Either ErrorCode Unit)
+copyFileCont src dest = do
+  e <- readFileCont src
+  case e of
+    Left err -> pure $ Left err
+    Right content -> writeFileCont dest content
+
+concatFilesCont :: FilePath -> FilePath -> FilePath -> Async (Either ErrorCode Unit)
+concatFilesCont srcA srcB dest = do
+  resultA <- readFileCont srcA
+  resultB <- readFileCont srcB
+  case (<>) <$> resultA <*> resultB of
+    Right contentAB -> writeFileCont dest contentAB
+    Left err -> pure $ Left err
+
 readFileContEx :: FilePath -> ExceptT ErrorCode Async String
 readFileContEx path = ExceptT $ readFileCont path
 
