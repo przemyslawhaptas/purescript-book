@@ -17,15 +17,15 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-console": "^3.0.0",
-    "purescript-functions": "^3.0.0",
-    "purescript-lists": "^4.0.0",
-    "purescript-parallel": "^3.0.0",
-    "purescript-refs": "^3.0.0",
-    "purescript-strings": "^3.0.0",
-    "purescript-transformers": "^3.0.0"
+    "purescript-console": "^5.0.0",
+    "purescript-functions": "^5.0.0",
+    "purescript-lists": "^6.0.1",
+    "purescript-parallel": "^5.0.0",
+    "purescript-refs": "^5.0.0",
+    "purescript-strings": "^5.0.0",
+    "purescript-transformers": "^5.1.0"
   },
   "devDependencies": {
-    "purescript-psci-support": "^3.0.0"
+    "purescript-psci-support": "^5.0.0"
   }
 }
