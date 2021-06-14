@@ -9,7 +9,7 @@ import Data.Function (on)
 import Data.List (List(..), fromFoldable)
 import Merge (mergeWith, mergePoly, merge)
 import Sorted (sorted)
-import Test.QuickCheck (quickCheck)
+import Test.QuickCheck (quickCheck, (<?>))
 import Tree (Tree, member, insert, toArray, anywhere)
 
 isSorted :: forall a. (Ord a) => Array a -> Boolean
@@ -34,8 +34,23 @@ main :: Effect Unit
 main = do
   -- Tests for module 'Merge'
 
-  quickCheck $ \xs ys -> isSorted $ merge (sorted xs) (sorted ys)
-  quickCheck $ \xs ys -> xs `isSubarrayOf` merge xs ys
+  quickCheck $ \xs ys ->
+    let
+      result = merge (sorted xs) (sorted ys)
+    in
+      isSorted result <?> show result <> " is not sorted"
+
+  quickCheck $ \xs ys ->
+    let
+      result = merge xs ys
+    in
+      xs `isSubarrayOf` result <?> show result <> " is not a subarray of " <> show xs
+
+  quickCheck $ \xs ->
+    let
+      result = merge xs []
+    in
+      result == xs <?> show xs <> " has changed after merging an empty array"
 
   quickCheck $ \xs ys -> isSorted $ ints $ mergePoly (sorted xs) (sorted ys)
   quickCheck $ \xs ys -> ints xs `isSubarrayOf` mergePoly xs ys
