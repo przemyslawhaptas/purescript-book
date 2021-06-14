@@ -2,8 +2,10 @@ module Files where
 
 import Prelude
 
+import Control.Apply (lift2)
 import Control.Monad.Cont.Trans (ContT(..), runContT)
 import Control.Monad.Except.Trans (ExceptT(..), runExceptT)
+import Control.Parallel (sequential, parallel)
 import Data.Either (Either(..))
 import Data.Function.Uncurried (Fn4, Fn3, runFn4, runFn3)
 import Data.Traversable (traverse)
@@ -73,6 +75,18 @@ concatFilesContEx srcA srcB dest = do
 
 concatenateMany :: Array FilePath -> FilePath -> ExceptT ErrorCode Async (Array Unit)
 concatenateMany srcs dest = traverse (\src -> concatFilesContEx dest src dest) srcs
+
+readTwoFilesCont :: FilePath -> FilePath -> Async (Either ErrorCode String)
+readTwoFilesCont srcA srcB = sequential $
+  lift2 append
+    <$> parallel (readFileCont srcA)
+    <*> parallel (readFileCont srcB)
+
+readTwoFilesContEx :: FilePath -> FilePath -> ExceptT ErrorCode Async String
+readTwoFilesContEx srcA srcB = sequential $
+  append
+    <$> parallel (readFileContEx srcA)
+    <*> parallel (readFileContEx srcB)
 
 test :: Effect Unit
 test = do
