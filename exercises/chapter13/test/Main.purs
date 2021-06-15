@@ -2,11 +2,11 @@ module Test.Main where
 
 import Prelude
 
-import Effect (Effect)
-import Data.Array (sortBy, intersect)
+import Data.Array (all, intersect, length, replicate, sortBy)
 import Data.Foldable (foldr)
 import Data.Function (on)
 import Data.List (List(..), fromFoldable)
+import Effect (Effect)
 import Merge (mergeWith, mergePoly, merge)
 import Sorted (sorted)
 import Test.QuickCheck (quickCheck, (<?>))
@@ -23,6 +23,9 @@ isSubarrayOf xs ys = xs `intersect` ys == xs
 
 ints :: Array Int -> Array Int
 ints = identity
+
+bools :: Array Boolean -> Array Boolean
+bools = identity
 
 intToBool :: (Int -> Boolean) -> Int -> Boolean
 intToBool = identity
@@ -55,6 +58,9 @@ main = do
   quickCheck $ \xs ys -> isSorted $ ints $ mergePoly (sorted xs) (sorted ys)
   quickCheck $ \xs ys -> ints xs `isSubarrayOf` mergePoly xs ys
 
+  quickCheck $ \xs ys -> isSorted $ bools $ mergePoly (sorted xs) (sorted ys)
+  quickCheck $ \xs ys -> bools xs `isSubarrayOf` mergePoly xs ys
+
   quickCheck $ \xs ys f -> isSorted $ map f $ mergeWith (intToBool f) (sortBy (compare `on` f) xs) (sortBy (compare `on` f) ys)
   quickCheck $ \xs ys f -> xs `isSubarrayOf` mergeWith (intToBool f) xs ys
 
@@ -66,3 +72,20 @@ main = do
   quickCheck $ \f g t ->
     anywhere (\s -> f s || g s) t ==
       anywhere f (treeOfInt t) || anywhere g t
+
+  -- Tests for module 'Data.Array'
+
+  quickCheck $ \n a ->
+    let
+      result = replicate n a
+      resultLength = length (ints result)
+    in
+      (if n < 0 then resultLength == 0 else resultLength == n)
+        <?> show result <> " is not of length " <> show n
+
+  quickCheck $ \n a ->
+    let
+      result = replicate n a
+    in
+      all (eq a) (ints result)
+        <?> show result <> " doesn't contain only elements equal " <> show a
