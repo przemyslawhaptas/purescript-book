@@ -21,6 +21,9 @@ isSorted = go <<< fromFoldable
 isSubarrayOf :: forall a. (Eq a) => Array a -> Array a -> Boolean
 isSubarrayOf xs ys = xs `intersect` ys == xs
 
+int :: Int -> Int
+int = identity
+
 ints :: Array Int -> Array Int
 ints = identity
 
@@ -30,7 +33,10 @@ bools = identity
 intToBool :: (Int -> Boolean) -> Int -> Boolean
 intToBool = identity
 
-treeOfInt :: Tree Number -> Tree Number
+treeOfNumber :: Tree Number -> Tree Number
+treeOfNumber = identity
+
+treeOfInt :: Tree Int -> Tree Int
 treeOfInt = identity
 
 main :: Effect Unit
@@ -66,12 +72,16 @@ main = do
 
   -- Tests for module 'Tree'
 
-  quickCheck $ \t a -> member a $ insert a $ treeOfInt t
+  quickCheck $ \t a -> member a $ insert a $ treeOfNumber t
   quickCheck $ \t xs -> isSorted $ toArray $ foldr insert t $ ints xs
 
   quickCheck $ \f g t ->
     anywhere (\s -> f s || g s) t ==
-      anywhere f (treeOfInt t) || anywhere g t
+      anywhere f (treeOfNumber t) || anywhere g t
+
+  quickCheck $ \t a bs ->
+    member a $ foldr insert (insert (int a) $ treeOfInt t) (ints bs)
+
 
   -- Tests for module 'Data.Array'
 
