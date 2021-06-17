@@ -67,7 +67,10 @@ main = do
   quickCheck $ \xs ys -> isSorted $ bools $ mergePoly (sorted xs) (sorted ys)
   quickCheck $ \xs ys -> bools xs `isSubarrayOf` mergePoly xs ys
 
-  quickCheck $ \xs ys f -> isSorted $ map f $ mergeWith (intToBool f) (sortBy (compare `on` f) xs) (sortBy (compare `on` f) ys)
+  quickCheck $ \xs ys f ->
+    isSorted $ map f $
+      mergeWith (intToBool f) (sortBy (compare `on` f) xs) (sortBy (compare `on` f) ys)
+
   quickCheck $ \xs ys f -> xs `isSubarrayOf` mergeWith (intToBool f) xs ys
 
   -- Tests for module 'Tree'
