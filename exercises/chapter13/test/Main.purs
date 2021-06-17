@@ -3,13 +3,15 @@ module Test.Main where
 import Prelude
 
 import Data.Array (all, intersect, length, replicate, sortBy)
-import Data.Foldable (foldr)
+import Data.Foldable (foldMap)
 import Data.Function (on)
 import Data.List (List(..), fromFoldable)
+import Data.Maybe.First (First(..))
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Merge (mergeWith, mergePoly, merge)
 import Sorted (sorted)
-import Test.QuickCheck (quickCheck, (<?>))
+import Test.QuickCheck (Result(..), quickCheck, (<?>))
 import Tree (Tree, member, insert, toArray, anywhere)
 
 isSorted :: forall a. (Ord a) => Array a -> Boolean
@@ -38,6 +40,12 @@ treeOfNumber = identity
 
 treeOfInt :: Tree Int -> Tree Int
 treeOfInt = identity
+
+allSuccessful :: List Result -> Boolean
+allSuccessful results = foldMap resultToFirstMaybe results == First Nothing
+  where
+    resultToFirstMaybe Success = First Nothing
+    resultToFirstMaybe (Failed error) = First (Just error)
 
 main :: Effect Unit
 main = do
@@ -72,6 +80,9 @@ main = do
       mergeWith (intToBool f) (sortBy (compare `on` f) xs) (sortBy (compare `on` f) ys)
 
   quickCheck $ \xs ys f -> xs `isSubarrayOf` mergeWith (intToBool f) xs ys
+
+  quickCheck $ \xs ys zs f ->
+    mergeWith (intToBool f) xs (mergeWith f ys zs) == mergeWith f (mergeWith f xs ys) zs
 
   -- Tests for module 'Tree'
 
