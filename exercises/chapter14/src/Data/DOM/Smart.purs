@@ -38,7 +38,7 @@ data Content
 
 newtype Attribute = Attribute
   { key          :: String
-  , value        :: String
+  , value        :: Maybe String
   }
 
 element :: String -> Array Attribute -> Maybe (Array Content) -> Element
@@ -59,7 +59,13 @@ newtype AttributeKey = AttributeKey String
 attribute :: AttributeKey -> String -> Attribute
 attribute (AttributeKey key) value = Attribute
   { key: key
-  , value: value
+  , value: Just value
+  }
+
+emptyAttribute :: AttributeKey -> Attribute
+emptyAttribute (AttributeKey key) = Attribute
+  { key: key
+  , value: Nothing
   }
 
 infix 4 attribute as :=
@@ -72,6 +78,27 @@ p attribs content = element "p" attribs (Just content)
 
 img :: Array Attribute -> Element
 img attribs = element "img" attribs Nothing
+
+html :: Array Attribute -> Array Content -> Element
+html attribs content = element "html" attribs (Just content)
+
+head :: Array Attribute -> Array Content -> Element
+head attribs content = element "head" attribs (Just content)
+
+body :: Array Attribute -> Array Content -> Element
+body attribs content = element "body" attribs (Just content)
+
+meta :: Array Attribute -> Element
+meta attribs = element "meta" attribs Nothing
+
+title :: Array Attribute -> Array Content -> Element
+title attribs content = element "title" attribs (Just content)
+
+link :: Array Attribute -> Element
+link attribs = element "link" attribs Nothing
+
+script :: Array Attribute -> Array Content -> Element
+script attribs content = element "script" attribs (Just content)
 
 href :: AttributeKey
 href = AttributeKey "href"
@@ -88,6 +115,15 @@ width = AttributeKey "width"
 height :: AttributeKey
 height = AttributeKey "height"
 
+lang :: AttributeKey
+lang = AttributeKey "lang"
+
+charset :: AttributeKey
+charset = AttributeKey "charset"
+
+rel :: AttributeKey
+rel = AttributeKey "rel"
+
 render :: Element -> String
 render (Element e) =
     "<" <> e.name <>
@@ -95,7 +131,8 @@ render (Element e) =
     renderContent e.content
   where
     renderAttribute :: Attribute -> String
-    renderAttribute (Attribute x) = x.key <> "=\"" <> x.value <> "\""
+    renderAttribute (Attribute { key, value: Just value }) = key <> "=\"" <> value <> "\""
+    renderAttribute (Attribute { key, value: Nothing }) = key
 
     renderContent :: Maybe (Array Content) -> String
     renderContent Nothing = " />"
@@ -106,3 +143,16 @@ render (Element e) =
         renderContentItem :: Content -> String
         renderContentItem (TextContent s) = s
         renderContentItem (ElementContent e') = render e'
+
+-- not quite valid at this point
+exampleHtml :: String
+exampleHtml = render $
+  html [ lang := "en" ]
+    [ (elem $ head []
+      [ (elem $ meta [ charset := "utf-8" ])
+      , (elem $ title [] [ text "Example HTML" ])
+      , (elem $ link [ rel := "stylesheet", href := "style.css" ])
+      , (elem $ script [ src := "script.js" ] [])
+      ])
+    , (elem $ body [] [ text "Page Content" ])
+    ]
