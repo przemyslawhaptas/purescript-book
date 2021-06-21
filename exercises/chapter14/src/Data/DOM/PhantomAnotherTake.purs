@@ -1,4 +1,4 @@
-module Data.DOM.Phantom
+module Data.DOM.PhantomAnotherTake
   ( Element
   , Attribute
   , Content
@@ -8,7 +8,6 @@ module Data.DOM.Phantom
   , NotEmpty
   , class IsValue
   , toValue
-  , class IsNotEmpty
 
   , a
   , p
@@ -21,6 +20,7 @@ module Data.DOM.Phantom
   , height
 
   , attribute, (:=)
+  , emptyAttribute
   , text
   , elem
 
@@ -50,15 +50,16 @@ newtype Attribute = Attribute
   , value        :: Maybe String
   }
 
-newtype AttributeKey :: forall k1 k2. k1 -> k2 -> Type
-newtype AttributeKey value empty = AttributeKey String
+newtype AttributeKey :: forall k. k -> Type
+newtype AttributeKey a = AttributeKey String
 
 data Size
   = Pixels Int
   | Percent Int
 
 data Empty
-data NotEmpty
+data NotEmpty :: forall k. k -> Type
+data NotEmpty a
 
 pixels :: Int -> Size
 pixels = Pixels
@@ -92,29 +93,19 @@ instance sizeIsValue :: IsValue Size where
   toValue (Pixels px) = show px <> "px"
   toValue (Percent perc) = show perc <> "%"
 
-class IsNotEmpty :: forall k. k -> Constraint
-class IsNotEmpty a
-
-instance notEmptyIsNotEmpty :: IsNotEmpty NotEmpty
-
-class IsEmpty :: forall k. k -> Constraint
-class IsEmpty a
-
-instance emptyIsEmpty :: IsEmpty Empty
-
-attribute :: forall a b. IsValue a => IsNotEmpty b => AttributeKey a b -> a -> Attribute
+attribute :: forall a. IsValue a => AttributeKey (NotEmpty a) -> a -> Attribute
 attribute (AttributeKey key) value = Attribute
   { key: key
   , value: Just $ toValue value
   }
 
-emptyAttribute :: forall a b. IsEmpty b => AttributeKey a b -> a -> Attribute
-emptyAttribute (AttributeKey key) value = Attribute
+infix 4 attribute as :=
+
+emptyAttribute :: AttributeKey Empty -> Attribute
+emptyAttribute (AttributeKey key) = Attribute
   { key: key
   , value: Nothing
   }
-
-infix 4 attribute as :=
 
 a :: Array Attribute -> Array Content -> Element
 a attribs content = element "a" attribs (Just content)
@@ -125,25 +116,25 @@ p attribs content = element "p" attribs (Just content)
 img :: Array Attribute -> Element
 img attribs = element "img" attribs Nothing
 
-href :: AttributeKey String NotEmpty
+href :: AttributeKey (NotEmpty String)
 href = AttributeKey "href"
 
-_class :: AttributeKey String NotEmpty
+_class :: AttributeKey (NotEmpty String)
 _class = AttributeKey "class"
 
-src :: AttributeKey String NotEmpty
+src :: AttributeKey (NotEmpty String)
 src = AttributeKey "src"
 
-width :: AttributeKey Size NotEmpty
+width :: AttributeKey (NotEmpty Size)
 width = AttributeKey "width"
 
-height :: AttributeKey Size NotEmpty
+height :: AttributeKey (NotEmpty Size)
 height = AttributeKey "height"
 
-disabled :: AttributeKey Unit Empty
+disabled :: AttributeKey Empty
 disabled = AttributeKey "disabled"
 
-checked :: AttributeKey Unit Empty
+checked :: AttributeKey Empty
 checked = AttributeKey "checked"
 
 render :: Element -> String
