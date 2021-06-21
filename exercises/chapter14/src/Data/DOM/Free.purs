@@ -53,6 +53,7 @@ newtype Attribute = Attribute
   , value        :: String
   }
 
+newtype AttributeKey :: forall k. k -> Type
 newtype AttributeKey a = AttributeKey String
 
 element :: String -> Array Attribute -> Maybe (Content Unit) -> Element
@@ -72,7 +73,7 @@ class IsValue a where
   toValue :: a -> String
 
 instance stringIsValue :: IsValue String where
-  toValue = id
+  toValue = identity
 
 instance intIsValue :: IsValue Int where
   toValue = show
