@@ -53,7 +53,9 @@ instance functorContentF :: Functor ContentF where
   map f (ElementContent e x) = ElementContent e (f x)
   map f (NewName k) = NewName (f <<< k)
 
-type Content = Free ContentF
+-- type Content a = Free ContentF a
+
+newtype Content a = Content (Free ContentF a)
 
 newtype Attribute = Attribute
   { key          :: String
@@ -67,13 +69,13 @@ element :: String -> Array Attribute -> Maybe (Content Unit) -> Element
 element name_ attribs content = Element { name: name_, attribs, content }
 
 text :: String -> Content Unit
-text s = liftF $ TextContent s unit
+text s = Content $ liftF $ TextContent s unit
 
 elem :: Element -> Content Unit
-elem e = liftF $ ElementContent e unit
+elem e = Content $ liftF $ ElementContent e unit
 
 newName :: Content Name
-newName = liftF $ NewName identity
+newName = Content $ liftF $ NewName identity
 
 class IsValue a where
   toValue :: a -> String
@@ -136,10 +138,10 @@ render :: Content Unit -> String
 render = \e -> evalState (execWriterT (renderInitElement e)) 0
   where
     renderInitElement :: Content Unit -> Interp Unit
-    renderInitElement elementContent = do
+    renderInitElement (Content elementContent) = do
       runFreeM renderContentItem elementContent
 
-    renderContentItem :: forall a. ContentF (Content a) -> Interp (Content a)
+    renderContentItem :: forall a. ContentF (Free ContentF a) -> Interp (Free ContentF a)
     renderContentItem (TextContent s rest) = do
       tell s
       pure rest
@@ -170,7 +172,7 @@ render = \e -> evalState (execWriterT (renderInitElement e)) 0
 
         renderContent :: Maybe (Content Unit) -> Interp Unit
         renderContent Nothing = tell " />"
-        renderContent (Just content) = do
+        renderContent (Just (Content content)) = do
           tell ">"
           runFreeM renderContentItem content
           tell "</"
