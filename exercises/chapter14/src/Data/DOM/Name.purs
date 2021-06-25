@@ -22,6 +22,7 @@ module Data.DOM.Name
   , attribute, (:=)
   , text
   , newName
+  , isMobile
 
   , render
   ) where
@@ -29,6 +30,7 @@ module Data.DOM.Name
 import Prelude
 
 import Control.Monad.Free (Free, runFreeM, liftF)
+import Control.Monad.Reader.Trans (ReaderT, runReaderT, ask)
 import Control.Monad.State (State, evalState)
 import Control.Monad.State.Trans (put, get)
 import Control.Monad.Writer.Trans (WriterT, execWriterT, tell)
@@ -47,15 +49,22 @@ data ContentF a
   = TextContent String a
   | ElementContent Element a
   | NewName (Name -> a)
+  | IsMobile (Boolean -> a)
 
 instance functorContentF :: Functor ContentF where
   map f (TextContent s x) = TextContent s (f x)
   map f (ElementContent e x) = ElementContent e (f x)
   map f (NewName k) = NewName (f <<< k)
+  map f (IsMobile k) = IsMobile (f <<< k)
 
 -- type Content a = Free ContentF a
 
 newtype Content a = Content (Free ContentF a)
+derive newtype instance monadContent :: Monad Content
+derive newtype instance functorContent :: Functor Content
+derive newtype instance applyContent :: Apply Content
+derive newtype instance applicativeContent :: Applicative Content
+derive newtype instance bindContent :: Bind Content
 
 newtype Attribute = Attribute
   { key          :: String
@@ -76,6 +85,9 @@ elem e = Content $ liftF $ ElementContent e unit
 
 newName :: Content Name
 newName = Content $ liftF $ NewName identity
+
+isMobile :: Content Boolean
+isMobile = Content $ liftF $ IsMobile identity
 
 class IsValue a where
   toValue :: a -> String
@@ -132,10 +144,10 @@ width = AttributeKey "width"
 height :: AttributeKey Int
 height = AttributeKey "height"
 
-type Interp = WriterT String (State Int)
+type Interp = ReaderT Boolean (WriterT String (State Int))
 
-render :: Content Unit -> String
-render = \e -> evalState (execWriterT (renderInitElement e)) 0
+render :: Boolean -> Content Unit -> String
+render mobile initE = evalState (execWriterT (runReaderT (renderInitElement initE) mobile)) 0
   where
     renderInitElement :: Content Unit -> Interp Unit
     renderInitElement (Content elementContent) = do
@@ -153,6 +165,9 @@ render = \e -> evalState (execWriterT (renderInitElement e)) 0
       let fresh = Name $ "name" <> show n
       put $ n + 1
       pure (k fresh)
+    renderContentItem (IsMobile k) = do
+      m <- ask
+      pure (k m)
 
     renderElement :: Element -> Interp Unit
     renderElement (Element e) = do
