@@ -1,8 +1,13 @@
-module Data.DOM.Smart
+module Data.DOM.PhantomAnotherTake
   ( Element
   , Attribute
   , Content
   , AttributeKey
+  , Size
+  , Empty
+  , NotEmpty
+  , class IsValue
+  , toValue
 
   , a
   , p
@@ -15,8 +20,12 @@ module Data.DOM.Smart
   , height
 
   , attribute, (:=)
+  , emptyAttribute
   , text
   , elem
+
+  , pixels
+  , percent
 
   , render
   ) where
@@ -41,6 +50,23 @@ newtype Attribute = Attribute
   , value        :: Maybe String
   }
 
+newtype AttributeKey :: forall k. k -> Type
+newtype AttributeKey a = AttributeKey String
+
+data Size
+  = Pixels Int
+  | Percent Int
+
+data Empty
+data NotEmpty :: forall k. k -> Type
+data NotEmpty a
+
+pixels :: Int -> Size
+pixels = Pixels
+
+percent :: Int -> Size
+percent = Percent
+
 element :: String -> Array Attribute -> Maybe (Array Content) -> Element
 element name attribs content = Element
   { name:      name
@@ -54,21 +80,32 @@ text = TextContent
 elem :: Element -> Content
 elem = ElementContent
 
-newtype AttributeKey = AttributeKey String
+class IsValue a where
+  toValue :: a -> String
 
-attribute :: AttributeKey -> String -> Attribute
+instance stringIsValue :: IsValue String where
+  toValue = identity
+
+instance intIsValue :: IsValue Int where
+  toValue = show
+
+instance sizeIsValue :: IsValue Size where
+  toValue (Pixels px) = show px <> "px"
+  toValue (Percent perc) = show perc <> "%"
+
+attribute :: forall a. IsValue a => AttributeKey (NotEmpty a) -> a -> Attribute
 attribute (AttributeKey key) value = Attribute
   { key: key
-  , value: Just value
+  , value: Just $ toValue value
   }
 
-emptyAttribute :: AttributeKey -> Attribute
+infix 4 attribute as :=
+
+emptyAttribute :: AttributeKey Empty -> Attribute
 emptyAttribute (AttributeKey key) = Attribute
   { key: key
   , value: Nothing
   }
-
-infix 4 attribute as :=
 
 a :: Array Attribute -> Array Content -> Element
 a attribs content = element "a" attribs (Just content)
@@ -79,50 +116,26 @@ p attribs content = element "p" attribs (Just content)
 img :: Array Attribute -> Element
 img attribs = element "img" attribs Nothing
 
-html :: Array Attribute -> Array Content -> Element
-html attribs content = element "html" attribs (Just content)
-
-head :: Array Attribute -> Array Content -> Element
-head attribs content = element "head" attribs (Just content)
-
-body :: Array Attribute -> Array Content -> Element
-body attribs content = element "body" attribs (Just content)
-
-meta :: Array Attribute -> Element
-meta attribs = element "meta" attribs Nothing
-
-title :: Array Attribute -> Array Content -> Element
-title attribs content = element "title" attribs (Just content)
-
-link :: Array Attribute -> Element
-link attribs = element "link" attribs Nothing
-
-script :: Array Attribute -> Array Content -> Element
-script attribs content = element "script" attribs (Just content)
-
-href :: AttributeKey
+href :: AttributeKey (NotEmpty String)
 href = AttributeKey "href"
 
-_class :: AttributeKey
+_class :: AttributeKey (NotEmpty String)
 _class = AttributeKey "class"
 
-src :: AttributeKey
+src :: AttributeKey (NotEmpty String)
 src = AttributeKey "src"
 
-width :: AttributeKey
+width :: AttributeKey (NotEmpty Size)
 width = AttributeKey "width"
 
-height :: AttributeKey
+height :: AttributeKey (NotEmpty Size)
 height = AttributeKey "height"
 
-lang :: AttributeKey
-lang = AttributeKey "lang"
+disabled :: AttributeKey Empty
+disabled = AttributeKey "disabled"
 
-charset :: AttributeKey
-charset = AttributeKey "charset"
-
-rel :: AttributeKey
-rel = AttributeKey "rel"
+checked :: AttributeKey Empty
+checked = AttributeKey "checked"
 
 render :: Element -> String
 render (Element e) =
@@ -143,16 +156,3 @@ render (Element e) =
         renderContentItem :: Content -> String
         renderContentItem (TextContent s) = s
         renderContentItem (ElementContent e') = render e'
-
--- not quite valid at this point
-exampleHtml :: String
-exampleHtml = render $
-  html [ lang := "en" ]
-    [ (elem $ head []
-      [ (elem $ meta [ charset := "utf-8" ])
-      , (elem $ title [] [ text "Example HTML" ])
-      , (elem $ link [ rel := "stylesheet", href := "style.css" ])
-      , (elem $ script [ src := "script.js" ] [])
-      ])
-    , (elem $ body [] [ text "Page Content" ])
-    ]

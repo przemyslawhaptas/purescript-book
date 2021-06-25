@@ -41,10 +41,12 @@ newtype Element = Element
 data ContentF a
   = TextContent String a
   | ElementContent Element a
+  | CommentContent String a
 
 instance functorContentF :: Functor ContentF where
   map f (TextContent s x) = TextContent s (f x)
   map f (ElementContent e x) = ElementContent e (f x)
+  map f (CommentContent c x) = CommentContent c (f x)
 
 type Content = Free ContentF
 
@@ -53,6 +55,7 @@ newtype Attribute = Attribute
   , value        :: String
   }
 
+newtype AttributeKey :: forall k. k -> Type
 newtype AttributeKey a = AttributeKey String
 
 element :: String -> Array Attribute -> Maybe (Content Unit) -> Element
@@ -68,11 +71,14 @@ text s = liftF $ TextContent s unit
 elem :: Element -> Content Unit
 elem e = liftF $ ElementContent e unit
 
+comment :: String -> Content Unit
+comment c = liftF $ CommentContent c unit
+
 class IsValue a where
   toValue :: a -> String
 
 instance stringIsValue :: IsValue String where
-  toValue = id
+  toValue = identity
 
 instance intIsValue :: IsValue Int where
   toValue = show
@@ -114,33 +120,42 @@ render = execWriter <<< renderElement
   where
     renderElement :: Element -> Writer String Unit
     renderElement (Element e) = do
-        tell "<"
-        tell e.name
-        for_ e.attribs $ \x -> do
-          tell " "
-          renderAttribute x
-        renderContent e.content
-      where
-        renderAttribute :: Attribute -> Writer String Unit
-        renderAttribute (Attribute x) = do
-          tell x.key
-          tell "=\""
-          tell x.value
-          tell "\""
+      tell "<"
+      tell e.name
+      for_ e.attribs $ \x -> do
+        tell " "
+        renderAttribute x
+      renderContent e.content
+        where
+          renderAttribute :: Attribute -> Writer String Unit
+          renderAttribute (Attribute x) = do
+            tell x.key
+            tell "=\""
+            tell x.value
+            tell "\""
 
-        renderContent :: Maybe (Content Unit) -> Writer String Unit
-        renderContent Nothing = tell " />"
-        renderContent (Just content) = do
-          tell ">"
-          runFreeM renderContentItem content
-          tell "</"
-          tell e.name
-          tell ">"
+          renderContent :: Maybe (Content Unit) -> Writer String Unit
+          renderContent Nothing = tell " />"
+          renderContent (Just content) = do
+            tell ">"
+            runFreeM renderContentItem content
+            tell "</"
+            tell e.name
+            tell ">"
 
-        renderContentItem :: forall a. ContentF (Content a) -> Writer String (Content a)
-        renderContentItem (TextContent s rest) = do
-          tell s
-          pure rest
-        renderContentItem (ElementContent e' rest) = do
-          renderElement e'
-          pure rest
+          renderContentItem :: forall a. ContentF (Content a) -> Writer String (Content a)
+          renderContentItem (TextContent s rest) = do
+            tell s
+            pure rest
+          renderContentItem (ElementContent e' rest) = do
+            renderElement e'
+            pure rest
+          renderContentItem (CommentContent c rest) = do
+            renderComment c
+            pure rest
+
+          renderComment :: String -> Writer String Unit
+          renderComment c = do
+            tell "<!-- "
+            tell c
+            tell " -->"

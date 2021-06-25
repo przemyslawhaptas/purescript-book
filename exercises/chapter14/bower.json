@@ -17,11 +17,11 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-arrays": "^4.0.0",
-    "purescript-strings": "^3.0.0",
-    "purescript-free": "^4.0.0"
+    "purescript-arrays": "^6.0.1",
+    "purescript-strings": "^5.0.0",
+    "purescript-free": "^6.0.1"
   },
   "devDependencies": {
-    "purescript-psci-support": "^3.0.0"
+    "purescript-psci-support": "^5.0.0"
   }
 }
